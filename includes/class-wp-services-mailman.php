@@ -152,8 +152,9 @@ class Wp_Services_Mailman {
 
 		$plugin_admin = new Wp_Services_Mailman_Admin( $this->get_plugin_name(), $this->get_version() );
 
-		$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_styles' );
-		$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_scripts' );
+		$this->loader->add_action( 'admin_menu', $plugin_admin, 'add_admin_menu' );
+		$this->loader->add_action( 'admin_init', $plugin_admin, 'settings_api_init' );
+		$this->loader->add_action( 'plugin_action_links', $plugin_admin, 'add_settings_link' );
 
 	}
 

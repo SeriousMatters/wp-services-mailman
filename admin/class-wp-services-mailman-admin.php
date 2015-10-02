@@ -55,49 +55,216 @@ class Wp_Services_Mailman_Admin {
 	}
 
 	/**
-	 * Register the stylesheets for the admin area.
+	 * Adds a settings page and link in menu
 	 *
 	 * @since    1.0.0
+	 * @access   public
 	 */
-	public function enqueue_styles() {
+	public function add_admin_menu() {
+		// add_options_page($page_title, $menu_title, $capability, $menu_slug, $function)
+		add_options_page(
+			__('Mailman Settings', $this->plugin_name),
+			__('Mailman', $this->plugin_name),
+			'manage_options',
+			$this->plugin_name,
+			array($this, 'display_admin_page')
+		);
+	}
 
-		/**
-		 * This function is provided for demonstration purposes only.
-		 *
-		 * An instance of this class should be passed to the run() function
-		 * defined in Wp_Services_Mailman_Loader as all of the hooks are defined
-		 * in that particular class.
-		 *
-		 * The Wp_Services_Mailman_Loader will then create the relationship
-		 * between the defined hooks and the functions defined in this
-		 * class.
-		 */
+	/**
+	 * Add plugin settings link on plugins page
+	 *
+	 * @since    1.0.0
+	 * @access   public
+	 * @return   mixed    The settings field
+	 */
+	public function add_settings_link( $links ) {
 
-		wp_enqueue_style( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'css/wp-services-mailman-admin.css', array(), $this->version, 'all' );
+		$mylinks = array(
+			'<a href="' . admin_url( 'options-general.php?page=' . $this->plugin_name ) . '">Settings</a>',
+		);
+		return array_merge( $links, $mylinks );
+	}
+
+	/**
+	 * Registers plugin settings, sections, and fields
+	 *
+	 * @since    1.0.0
+	 * @access   public
+	 */
+	public function settings_api_init() {
+		// register_setting( $option_group, $option_name, $sanitize_callback );
+		register_setting(
+			$this->plugin_name . '-options',
+			$this->plugin_name . '-options',
+			array( $this, 'validate_options' )
+		);
+
+		// add_settings_section( $id, $title, $callback, $page );
+		add_settings_section(
+			$this->plugin_name . '-options-section',
+			'',
+			array( $this,'display_options_section' ),
+			$this->plugin_name
+		);
+
+		// add_settings_field( $id, $title, $callback, $page, $section, $args );
+		add_settings_field(
+			'mailinglist-label-field',
+			__( 'List Label' ),
+			array( $this, 'display_label_field' ),
+			$this->plugin_name,
+			$this->plugin_name . '-options-section'
+		);
+		add_settings_field(
+			'mailinglist-url-field',
+			__( 'Mailman admin URL' ),
+			array($this, 'display_url_field' ),
+			$this->plugin_name,
+			$this->plugin_name . '-options-section'
+		);
+		add_settings_field(
+			'mailinglist-list-field',
+			__( 'List ID' ),
+			array( $this, 'display_list_field' ),
+			$this->plugin_name,
+			$this->plugin_name . '-options-section'
+		);
+		add_settings_field(
+			'mailinglist-pw-field',
+			__( 'List Password' ),
+			array( $this, 'display_pw_field' ),
+			$this->plugin_name,
+			$this->plugin_name . '-options-section'
+		);
 
 	}
 
 	/**
-	 * Register the JavaScript for the admin area.
+	 * Outputs the options page
 	 *
 	 * @since    1.0.0
+	 * @access   public
 	 */
-	public function enqueue_scripts() {
-
-		/**
-		 * This function is provided for demonstration purposes only.
-		 *
-		 * An instance of this class should be passed to the run() function
-		 * defined in Wp_Services_Mailman_Loader as all of the hooks are defined
-		 * in that particular class.
-		 *
-		 * The Wp_Services_Mailman_Loader will then create the relationship
-		 * between the defined hooks and the functions defined in this
-		 * class.
-		 */
-
-		wp_enqueue_script( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'js/wp-services-mailman-admin.js', array( 'jquery' ), $this->version, false );
-
+	public function display_admin_page() {
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'admin/partials/wp-services-mailman-admin-display.php';
 	}
 
+	/**
+	 * Display settings section
+	 * 
+	 * @since    1.0.0
+	 * @access   public
+	 */
+	public function display_options_section() {
+		// $options = get_option( $this->plugin_name . '-options' );
+		// var_dump($this->plugin_name . '-options');
+	}
+
+	/**
+	 * Display settings fields
+	 *
+	 * @since    1.0.0
+	 * @access   public
+	 */
+	public function display_label_field() {
+		$options = get_option( $this->plugin_name . '-options' );
+		$listLabel = '';
+
+		if ( !empty( $options['listLabel'] ) ) {
+			$listLabel = $options['listLabel'];
+		}
+
+		?>
+		<input type="text" id="<?=$this->plugin_name;?>-options[listLabel]" name="<?=$this->plugin_name;?>-options[listLabel]" value="<?=$listLabel;?>" />
+		<p class="description">Descriptive name for front end</p>
+		<?php
+	}
+	public function display_url_field() {
+		$options = get_option( $this->plugin_name . '-options' );
+		$adminUrl = '';
+
+		if ( !empty( $options['adminUrl'] ) ) {
+			$adminUrl = $options['adminUrl'];
+		}
+
+		?>
+		<input type="text" id="<?=$this->plugin_name;?>-options[adminUrl]" name="<?=$this->plugin_name;?>-options[adminUrl]" value="<?=$adminUrl;?>" />
+		<p class="description">eg. <?=$_SERVER['HTTP_HOST'].'/mailman/admin'?></p>
+		<?php
+	}
+	public function display_list_field() {
+		$options = get_option( $this->plugin_name . '-options' );
+		$listId = '';
+
+		if ( !empty( $options['listId'] ) ) {
+			$listId = $options['listId'];
+		}
+
+		?>
+		<input type="text" id="<?=$this->plugin_name;?>-options[listId]" name="<?=$this->plugin_name;?>-options[listId]" value="<?=$listId;?>" />
+		<p class="description"></p>
+		<?php
+	}
+	public function display_pw_field() {
+		$options = get_option( $this->plugin_name . '-options' );
+		$listPw = '';
+
+		if ( ! empty( $options['listPw'] ) ) {
+			$listPw = $options['listPw'];
+		}
+
+		?>
+		<input type="text" id="<?=$this->plugin_name;?>-options[listPw]" name="<?=$this->plugin_name;?>-options[listPw]" value="<?=$listPw;?>" />
+		<p class="description"></p>
+		<?php
+	}
+
+	/**
+	 * Validate and sanitize mailinglists form submission
+	 *
+	 * @since    1.0.0
+	 * @access   public
+	 * @return   
+	 */
+	public function validate_options( $input ) {
+		$options = get_option( $this->plugin_name . '-options' );
+		error_log('----------------------------------'.serialize($input).'----------------------------------');
+		$sanitized = Array();
+
+		if(isset($input)) {
+			// List Name must not be empty
+			$sanitized['listLabel'] = sanitize_text_field( $input['listLabel'] );
+			if ( empty( $sanitized['listLabel'] ) ) {
+				add_settings_error( '', 'invalid-listLabel', 'List label cannot be empty.' );
+			} else {
+				$options['listLabel'] = $sanitized['listLabel'];
+			}
+			
+			// List Url must be a valid URL
+			$sanitized['adminUrl'] = sanitize_text_field( $input['adminUrl'] );
+			if ( empty( $sanitized['adminUrl'] ) ) {
+				add_settings_error( '', 'invalid-adminUrl', 'Please enter a valid list admin URL' );
+			} else {
+				$options['adminUrl'] = $sanitized['adminUrl'];
+			}
+
+			$sanitized['listId'] = sanitize_text_field( $input['listId'] );
+			if ( empty( $sanitized['listId'] ) ) {
+				add_settings_error( '', 'invalid-listId', 'List ID cannot be empty.' );
+			} else {
+				$options['listId'] = $sanitized['listId'];
+			}
+
+			// List Password must not be empty
+			$sanitized['listPw'] = sanitize_text_field( $input['listPw'] );
+			if ( empty( $sanitized['listPw'] ) ) {
+				add_settings_error( '', 'invalid-listPw', 'List admin password cannot be empty.' );
+			} else {
+				$options['listPw'] = $sanitized['listPw'];
+			}
+			return $options;
+
+		}
+	}
 }

@@ -13,4 +13,24 @@
  */
 ?>
 
-<!-- This file should primarily consist of HTML with a little bit of PHP. -->
+<div class="wrap">
+	<h2><?=esc_html( get_admin_page_title() );?></h2>
+	<div class="postbox-container">
+		<div class="postbox">
+			<div class ="inside">
+				<p>After adding and enabling some mailing lists, they will be available in the mailman widget.</p>
+			</div>
+		</div>
+		<div class="postbox">
+			<div class ="inside">
+				<form method="post" action="options.php">
+				<?php
+					settings_fields($this->plugin_name . '-options');
+					do_settings_sections( $this->plugin_name );
+					submit_button( 'Save' );
+				?>
+				</form>
+			</div>
+		</div>
+	</div>
+</div>
