@@ -158,7 +158,7 @@ class Wp_Services_Mailman_Admin {
 	 */
 	public function display_options_section() {
 		// $options = get_option( $this->plugin_name . '-options' );
-		// var_dump($this->plugin_name . '-options');
+
 	}
 
 	/**
@@ -180,6 +180,7 @@ class Wp_Services_Mailman_Admin {
 		<p class="description">Descriptive name for front end</p>
 		<?php
 	}
+
 	public function display_url_field() {
 		$options = get_option( $this->plugin_name . '-options' );
 		$adminUrl = '';
@@ -193,6 +194,7 @@ class Wp_Services_Mailman_Admin {
 		<p class="description">eg. <?=$_SERVER['HTTP_HOST'].'/mailman/admin'?></p>
 		<?php
 	}
+
 	public function display_list_field() {
 		$options = get_option( $this->plugin_name . '-options' );
 		$listId = '';
@@ -206,17 +208,18 @@ class Wp_Services_Mailman_Admin {
 		<p class="description"></p>
 		<?php
 	}
+
 	public function display_pw_field() {
 		$options = get_option( $this->plugin_name . '-options' );
-		$listPw = '';
+		$description = '';
 
-		if ( ! empty( $options['listPw'] ) ) {
-			$listPw = $options['listPw'];
+		if ( !empty( $options['listPw'] ) ) {
+			$description = 'Leave blank to keep unchanged';
 		}
 
 		?>
-		<input type="text" id="<?=$this->plugin_name;?>-options[listPw]" name="<?=$this->plugin_name;?>-options[listPw]" value="<?=$listPw;?>" />
-		<p class="description"></p>
+		<input type="password" id="<?=$this->plugin_name;?>-options[listPw]" name="<?=$this->plugin_name;?>-options[listPw]" />
+		<p class="description"><?=$description?></p>
 		<?php
 	}
 
@@ -229,13 +232,14 @@ class Wp_Services_Mailman_Admin {
 	 */
 	public function validate_options( $input ) {
 		$options = get_option( $this->plugin_name . '-options' );
-		error_log('----------------------------------'.serialize($input).'----------------------------------');
 		$sanitized = Array();
+		$errors = 0;
 
 		if(isset($input)) {
-			// List Name must not be empty
+			// List Label must not be empty
 			$sanitized['listLabel'] = sanitize_text_field( $input['listLabel'] );
 			if ( empty( $sanitized['listLabel'] ) ) {
+				$errors++;
 				add_settings_error( '', 'invalid-listLabel', 'List label cannot be empty.' );
 			} else {
 				$options['listLabel'] = $sanitized['listLabel'];
@@ -244,27 +248,58 @@ class Wp_Services_Mailman_Admin {
 			// List Url must be a valid URL
 			$sanitized['adminUrl'] = sanitize_text_field( $input['adminUrl'] );
 			if ( empty( $sanitized['adminUrl'] ) ) {
+				$errors++;
 				add_settings_error( '', 'invalid-adminUrl', 'Please enter a valid list admin URL' );
 			} else {
 				$options['adminUrl'] = $sanitized['adminUrl'];
 			}
 
+			// List ID must not be empty
 			$sanitized['listId'] = sanitize_text_field( $input['listId'] );
 			if ( empty( $sanitized['listId'] ) ) {
+				$errors++;
 				add_settings_error( '', 'invalid-listId', 'List ID cannot be empty.' );
 			} else {
 				$options['listId'] = $sanitized['listId'];
 			}
 
-			// List Password must not be empty
+			// List password must not be empty
 			$sanitized['listPw'] = sanitize_text_field( $input['listPw'] );
-			if ( empty( $sanitized['listPw'] ) ) {
-				add_settings_error( '', 'invalid-listPw', 'List admin password cannot be empty.' );
-			} else {
+			if ( empty( $sanitized['listPw'] ) AND empty( $options['listPw'] ) ) {
+				$errors++;
+				add_settings_error( '', 'invalid-listPw', 'List admin password required.' );
+			} else if ( !empty( $sanitized['listPw'] ) ) {
 				$options['listPw'] = $sanitized['listPw'];
 			}
+
+			// Validates Mailman account credentials
+			if ($errors == 0) {
+				$mm_error = $this->testMailmanConnection( $sanitized['adminUrl'], $sanitized['listId'], $sanitized['listPw'] );
+				if ( !empty($mm_error) ) {
+					add_settings_error( '', 'mailman-connection-failed', 'Mailman: ' . $mm_error );
+				} else {
+					add_settings_error( '', 'mailman-connection-success', 'Mailman connection test successful', 'updated' );
+
+				}
+			}
+
 			return $options;
 
+		}
+	}
+
+	/**
+	 * Test Services Mailman Connection
+	 * 
+	 */
+	private function testMailmanConnection($url, $list, $pw) {
+		require_once plugin_dir_path( dirname( __FILE__ ) ). 'includes/Services/Mailman.php';
+		try {
+			$mm = new Services_Mailman($url, $list, $pw);
+			$mm->members();
+			return '';
+		} catch(Services_Mailman_Exception $e) {
+			return $e->getMessage();
 		}
 	}
 }
