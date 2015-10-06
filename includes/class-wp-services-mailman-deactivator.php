@@ -30,7 +30,7 @@ class Wp_Services_Mailman_Deactivator {
 	 * @since    1.0.0
 	 */
 	public static function deactivate() {
-
+		delete_optoin( 'wp-services-mailman' . '_options' );
 	}
 
 }

@@ -84,30 +84,31 @@ class Wp_Services_Mailman_Subscription_Widget extends WP_Widget {
 	 * @since    1.0.0
 	 */
 	public function widget( $args, $instance ) {
-		// var_dump($args);
-		extract( $args );
-		echo $before_widget;
+		echo $args['before_widget'];
 		$title = apply_filters( 'widget_title', empty( $instance['title'] ) ? '' : $instance['title'], $instance, $this->id_base );
-		if ( !empty( $title ) ) { echo $before_title . $title . $after_title; }
+		if ( ! empty( $args['title'] ) ) { echo $args['before_title'] . $args['title'] . $args['after_title']; }
 		$options = get_option( $this->plugin_name . '-options' );
-		if ( isset($_POST['subscribe-mailinglist']) ) {
+		if ( isset( $_POST['subscribe-mailinglist'] ) ) {
 			// Handle submission
 			$result = $this->mailman_subscribe( $_POST['email'], $options['adminUrl'], $options['listId'], $options['listPw'] );
-			if ( $result == true ) {
+			if ( true == $result ) {
 				echo $instance['success_text'];
 			} else {
 				echo $instance['fail_text'];
-				$this->display_subscription_form($_POST['email']);
+				$this->display_subscription_form( $_POST['email'] );
 			}
 			
 		} else {
 			$this->display_subscription_form();
 		}
-		echo $after_widget;
+		echo $args['after_widget'];
 	}
 
 	/**
 	 * Dsiplay subscription form
+	 *
+	 * @since    1.0.0
+	 * @param    string    $email    
 	 */
 	protected function display_subscription_form( $email = '' ) {
 		?>
@@ -125,6 +126,12 @@ class Wp_Services_Mailman_Subscription_Widget extends WP_Widget {
 	 * Subscribe visitor to mailman list
 	 *
 	 * @since    1.0.0
+	 * @param    string    $email     subscriber email address
+	 * @param    string    $url       mailman admin url
+	 * @param    string    $list      mailman list
+	 * @param    string    $pw        mailman list password
+	 * @param    boolean   $invite    invite or subscribe
+	 * @return   boolean              true when subscribe/invite successful
 	 */
 	protected function mailman_subscribe( $email, $url, $list, $pw, $invite = true ) {
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/Services/Mailman.php';

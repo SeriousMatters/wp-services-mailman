@@ -44,8 +44,8 @@ class Wp_Services_Mailman_Admin {
 	 * Initialize the class and set its properties.
 	 *
 	 * @since    1.0.0
-	 * @param      string    $plugin_name       The name of this plugin.
-	 * @param      string    $version    The version of this plugin.
+	 * @param    string    $plugin_name       The name of this plugin.
+	 * @param    string    $version    The version of this plugin.
 	 */
 	public function __construct( $plugin_name, $version ) {
 
@@ -58,13 +58,12 @@ class Wp_Services_Mailman_Admin {
 	 * Adds a settings page and link in menu
 	 *
 	 * @since    1.0.0
-	 * @access   public
 	 */
 	public function add_admin_menu() {
 		// add_options_page($page_title, $menu_title, $capability, $menu_slug, $function)
 		add_options_page(
-			__('Mailman Settings', $this->plugin_name),
-			__('Mailman', $this->plugin_name),
+			__( 'Mailman Settings', $this->plugin_name ),
+			__( 'Mailman', $this->plugin_name ),
 			'manage_options',
 			$this->plugin_name,
 			array($this, 'display_admin_page')
@@ -75,7 +74,6 @@ class Wp_Services_Mailman_Admin {
 	 * Add plugin settings link on plugins page
 	 *
 	 * @since    1.0.0
-	 * @access   public
 	 * @return   mixed    The settings field
 	 */
 	public function add_settings_link( $links ) {
@@ -90,7 +88,6 @@ class Wp_Services_Mailman_Admin {
 	 * Registers plugin settings, sections, and fields
 	 *
 	 * @since    1.0.0
-	 * @access   public
 	 */
 	public function settings_api_init() {
 		// register_setting( $option_group, $option_name, $sanitize_callback );
@@ -119,7 +116,7 @@ class Wp_Services_Mailman_Admin {
 		add_settings_field(
 			'mailinglist-url-field',
 			__( 'Mailman admin URL' ),
-			array($this, 'display_url_field' ),
+			array( $this, 'display_url_field' ),
 			$this->plugin_name,
 			$this->plugin_name . '-options-section'
 		);
@@ -144,7 +141,6 @@ class Wp_Services_Mailman_Admin {
 	 * Outputs the options page
 	 *
 	 * @since    1.0.0
-	 * @access   public
 	 */
 	public function display_admin_page() {
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'admin/partials/wp-services-mailman-admin-display.php';
@@ -154,18 +150,13 @@ class Wp_Services_Mailman_Admin {
 	 * Display settings section
 	 * 
 	 * @since    1.0.0
-	 * @access   public
 	 */
-	public function display_options_section() {
-		// $options = get_option( $this->plugin_name . '-options' );
-
-	}
+	public function display_options_section() {}
 
 	/**
 	 * Display settings fields
 	 *
 	 * @since    1.0.0
-	 * @access   public
 	 */
 	public function display_label_field() {
 		$options = get_option( $this->plugin_name . '-options' );
@@ -185,7 +176,7 @@ class Wp_Services_Mailman_Admin {
 		$options = get_option( $this->plugin_name . '-options' );
 		$adminUrl = '';
 
-		if ( !empty( $options['adminUrl'] ) ) {
+		if ( ! empty( $options['adminUrl'] ) ) {
 			$adminUrl = $options['adminUrl'];
 		}
 
@@ -199,7 +190,7 @@ class Wp_Services_Mailman_Admin {
 		$options = get_option( $this->plugin_name . '-options' );
 		$listId = '';
 
-		if ( !empty( $options['listId'] ) ) {
+		if ( ! empty( $options['listId'] ) ) {
 			$listId = $options['listId'];
 		}
 
@@ -213,7 +204,7 @@ class Wp_Services_Mailman_Admin {
 		$options = get_option( $this->plugin_name . '-options' );
 		$description = '';
 
-		if ( !empty( $options['listPw'] ) ) {
+		if ( ! empty( $options['listPw'] ) ) {
 			$description = 'Leave blank to keep unchanged';
 		}
 
@@ -227,15 +218,15 @@ class Wp_Services_Mailman_Admin {
 	 * Validate and sanitize mailinglists form submission
 	 *
 	 * @since    1.0.0
-	 * @access   public
-	 * @return   
+	 * @param    array    $input    array of submitted options
+	 * @return   array              array of validated and updated options to be saved in db
 	 */
 	public function validate_options( $input ) {
 		$options = get_option( $this->plugin_name . '-options' );
 		$sanitized = Array();
 		$errors = 0;
 
-		if(isset($input)) {
+		if( isset( $input ) ) {
 			// List Label must not be empty
 			$sanitized['listLabel'] = sanitize_text_field( $input['listLabel'] );
 			if ( empty( $sanitized['listLabel'] ) ) {
@@ -273,13 +264,12 @@ class Wp_Services_Mailman_Admin {
 			}
 
 			// Validates Mailman account credentials
-			if ($errors == 0) {
-				$mm_error = $this->testMailmanConnection( $sanitized['adminUrl'], $sanitized['listId'], $sanitized['listPw'] );
-				if ( !empty($mm_error) ) {
+			if ( 0 == $errors ) {
+				$mm_error = $this->test_mailman_connection( $sanitized['adminUrl'], $sanitized['listId'], $sanitized['listPw'] );
+				if ( ! empty( $mm_error ) ) {
 					add_settings_error( '', 'mailman-connection-failed', 'Mailman: ' . $mm_error );
 				} else {
 					add_settings_error( '', 'mailman-connection-success', 'Mailman connection test successful', 'updated' );
-
 				}
 			}
 
@@ -291,14 +281,19 @@ class Wp_Services_Mailman_Admin {
 	/**
 	 * Test Services Mailman Connection
 	 * 
+	 * @since    1.0.0
+	 * @param    string    $url    mailman admin url
+	 * @param    string    $list   mailman list
+	 * @param    string    $pw     mailman list password
+	 * @return   string            error messages
 	 */
-	private function testMailmanConnection($url, $list, $pw) {
-		require_once plugin_dir_path( dirname( __FILE__ ) ). 'includes/Services/Mailman.php';
+	private function test_mailman_connection( $url, $list, $pw ) {
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/Services/Mailman.php';
 		try {
-			$mm = new Services_Mailman($url, $list, $pw);
+			$mm = new Services_Mailman( $url, $list, $pw ) ;
 			$mm->members();
 			return '';
-		} catch(Services_Mailman_Exception $e) {
+		} catch( Services_Mailman_Exception $e ) {
 			return $e->getMessage();
 		}
 	}
