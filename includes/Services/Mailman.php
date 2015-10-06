@@ -401,7 +401,7 @@ class Services_Mailman
             return false;
         }
         if ($h5->item(0)->nodeValue) {
-            if ($h5->item(0)->nodeValue == 'Successfully subscribed:') {
+            if ($h5->item(0)->nodeValue == 'Successfully subscribed:' OR $h5->item(0)->nodeValue == 'Successfully invited:') {
                 return $this;
             } else {
                 throw new Services_Mailman_Exception(
